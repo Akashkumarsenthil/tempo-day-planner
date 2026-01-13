@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempo — AI Day Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Decorative background elements -->
+        <div class="bg-gradient"></div>
+        <div class="bg-pattern"></div>
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">◐</span>
+                <span class="logo-text">Tempo</span>
+                <span class="ai-badge">AI</span>
+            </div>
+            <div class="date-navigation">
+                <button class="nav-btn" id="prevDay">←</button>
+                <div class="current-date" id="currentDate"></div>
+                <button class="nav-btn" id="nextDay">→</button>
+            </div>
+            <div class="user-menu">
+                <button class="today-btn" id="todayBtn">Today</button>
+                <div class="user-dropdown">
+                    <button class="user-btn" id="userBtn">
+                        {% if user.picture %}
+                        <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar">
+                        {% else %}
+                        <div class="user-avatar-placeholder">{{ user.name[0] if user.name else 'U' }}</div>
+                        {% endif %}
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dropdown-header">
+                            <strong>{{ user.name }}</strong>
+                            <span>{{ user.email }}</span>
+                        </div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item">Sign out</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Smart Input Bar -->
+        <div class="smart-input-container">
+            <div class="smart-input-wrapper">
+                <span class="smart-input-icon">✨</span>
+                <input 
+                    type="text" 
+                    id="smartInput" 
+                    class="smart-input" 
+                    placeholder="Type naturally... e.g., 'Call mom tomorrow at 3pm' or 'Gym at 7am for 1 hour'"
+                >
+                <button class="smart-input-btn" id="smartInputBtn">
+                    <span class="btn-text">Add Task</span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+            </div>
+            <div class="smart-input-hint">
+                AI will parse your input, set the right time, categorize it, and write it professionally
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Time Column -->
+            <aside class="time-column">
+                <div class="time-slots" id="timeSlots"></div>
+            </aside>
+
+            <!-- Schedule Grid -->
+            <section class="schedule-container">
+                <div class="schedule-grid" id="scheduleGrid">
+                    <!-- Tasks will be rendered here -->
+                </div>
+                <div class="current-time-line" id="currentTimeLine"></div>
+            </section>
+
+            <!-- Task Panel -->
+            <aside class="task-panel">
+                <div class="panel-header">
+                    <h2>Tasks</h2>
+                    <button class="add-task-btn" id="addTaskBtn">
+                        <span>+</span> Manual
+                    </button>
+                </div>
+                
+                <!-- Category Filter -->
+                <div class="category-filter" id="categoryFilter">
+                    <button class="category-chip active" data-category="all">All</button>
+                </div>
+                
+                <div class="task-list" id="taskList">
+                    <!-- Task items will be rendered here -->
+                </div>
+                <div class="panel-stats" id="panelStats">
+                    <div class="stat">
+                        <span class="stat-value" id="completedCount">0</span>
+                        <span class="stat-label">completed</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="remainingCount">0</span>
+                        <span class="stat-label">remaining</span>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="taskModal">
+            <div class="modal-header">
+                <h3 id="modalTitle">New Task</h3>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label for="taskTitleInput">Task Title</label>
+                    <input type="text" id="taskTitleInput" placeholder="Enter task title..." required>
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">Description</label>
+                    <textarea id="taskDescription" placeholder="Add any notes or details..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskDate">Date</label>
+                        <input type="date" id="taskDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskTime">Time</label>
+                        <input type="time" id="taskTime">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskDuration">Duration</label>
+                        <select id="taskDuration">
+                            <option value="15">15 min</option>
+                            <option value="30">30 min</option>
+                            <option value="45">45 min</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120">2 hours</option>
+                            <option value="180">3 hours</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPriority">Priority</label>
+                        <select id="taskPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <div class="category-selector" id="categorySelector">
+                        <!-- Categories will be rendered by JS -->
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="deleteTaskBtn" style="display: none;">Delete</button>
+                    <button type="submit" class="btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Processing Toast -->
+    <div class="ai-toast" id="aiToast">
+        <div class="ai-toast-content">
+            <span class="ai-toast-icon">🤖</span>
+            <span class="ai-toast-text">AI is processing your task...</span>
+        </div>
+    </div>
+
+    <script>
+        // Pass categories from backend to frontend
+        const CATEGORIES = {{ categories | tojson | safe }};
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
