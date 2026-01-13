@@ -194,31 +194,40 @@ def fallback_parse(user_input, reference_date=None):
     priority = 'medium'
     category = 'other'
     
-    # Extract time (e.g., "at 3pm", "at 14:30", "10am")
-    time_patterns = [
-        r'at\s+(\d{1,2}):(\d{2})\s*(am|pm)?',
-        r'at\s+(\d{1,2})\s*(am|pm)',
-        r'(\d{1,2}):(\d{2})\s*(am|pm)?',
-        r'(\d{1,2})\s*(am|pm)',
-    ]
+    # Extract time (e.g., "at 3pm", "at 14:30", "10am", "7:30pm")
+    # Pattern 1: "at 3:30 pm" or "at 3:30pm" or "at 15:30"
+    time_match = re.search(r'at\s+(\d{1,2}):(\d{2})\s*(am|pm)?', text, re.IGNORECASE)
+    if not time_match:
+        # Pattern 2: "at 3pm" or "at 3 pm"
+        time_match = re.search(r'at\s+(\d{1,2})\s*(am|pm)', text, re.IGNORECASE)
+    if not time_match:
+        # Pattern 3: "3:30pm" or "3:30 pm" or "15:30"
+        time_match = re.search(r'(\d{1,2}):(\d{2})\s*(am|pm)?', text, re.IGNORECASE)
+    if not time_match:
+        # Pattern 4: "3pm" or "3 pm"
+        time_match = re.search(r'(\d{1,2})\s*(am|pm)', text, re.IGNORECASE)
     
-    for pattern in time_patterns:
-        match = re.search(pattern, text)
-        if match:
-            groups = match.groups()
-            hour = int(groups[0])
-            minute = int(groups[1]) if len(groups) > 1 and groups[1] and groups[1].isdigit() else 0
-            ampm = groups[-1] if groups[-1] in ['am', 'pm'] else None
-            
-            if ampm == 'pm' and hour < 12:
-                hour += 12
-            elif ampm == 'am' and hour == 12:
-                hour = 0
-            
-            time_slot = f"{hour:02d}:{minute:02d}"
-            # Remove time from title
-            title = re.sub(pattern, '', title, flags=re.IGNORECASE).strip()
-            break
+    if time_match:
+        groups = time_match.groups()
+        hour = int(groups[0])
+        
+        # Check if second group is minutes (digits) or am/pm
+        if len(groups) >= 2 and groups[1] and groups[1].isdigit():
+            minute = int(groups[1])
+            ampm = groups[2].lower() if len(groups) > 2 and groups[2] else None
+        else:
+            minute = 0
+            ampm = groups[1].lower() if len(groups) > 1 and groups[1] else None
+        
+        # Convert to 24-hour format
+        if ampm == 'pm' and hour < 12:
+            hour += 12
+        elif ampm == 'am' and hour == 12:
+            hour = 0
+        
+        time_slot = f"{hour:02d}:{minute:02d}"
+        # Remove time from title
+        title = re.sub(time_match.group(0), '', title, flags=re.IGNORECASE).strip()
     
     # Extract date (tomorrow, day names)
     if 'tomorrow' in text:
