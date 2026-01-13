@@ -265,14 +265,8 @@
             <p class="login-title">Sign in to start planning</p>
             
             <div class="login-buttons">
-                <!-- Demo/Quick Start Button -->
-                <a href="{{ url_for('demo_login') }}" class="demo-btn">
-                    ✨ Quick Start (Demo Mode)
-                </a>
-                
                 {% if oauth_enabled %}
-                <div class="divider">or</div>
-                
+                <!-- Google Sign-in (Primary) -->
                 <a href="{{ url_for('google_login') }}" class="google-btn">
                     <svg viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -282,16 +276,19 @@
                     </svg>
                     Continue with Google
                 </a>
+                {% else %}
+                <!-- Demo mode when OAuth not configured -->
+                <a href="{{ url_for('demo_login') }}" class="demo-btn">
+                    ✨ Quick Start (Demo Mode)
+                </a>
+                
+                <div class="dev-notice">
+                    🔧 <strong>Development Mode</strong><br>
+                    Google OAuth not configured.<br>
+                    Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable.
+                </div>
                 {% endif %}
             </div>
-            
-            {% if dev_mode and not oauth_enabled %}
-            <div class="dev-notice">
-                🔧 <strong>Development Mode</strong><br>
-                Google OAuth not configured. Using demo login.<br>
-                Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable.
-            </div>
-            {% endif %}
         </div>
         
         <div class="features">
