@@ -122,6 +122,7 @@ def parse_task_with_gemini(user_input, reference_date=None):
     today_str = reference_date.strftime('%Y-%m-%d')
     tomorrow_str = (reference_date + timedelta(days=1)).strftime('%Y-%m-%d')
     day_of_week = reference_date.strftime('%A')
+    current_time = datetime.now().strftime('%H:%M')
     
     # Calculate dates for day names
     days_ahead = {}
@@ -129,35 +130,68 @@ def parse_task_with_gemini(user_input, reference_date=None):
         future_date = reference_date + timedelta(days=i)
         days_ahead[future_date.strftime('%A').lower()] = future_date.strftime('%Y-%m-%d')
     
-    prompt = f"""You are a task parser. Extract task details from the user's input and return ONLY a JSON object.
+    prompt = f"""You are a premium executive assistant AI for "Tempo" - an elegant day planner app. Your job is to transform casual user input into beautifully crafted, professional calendar entries.
 
-Today: {today_str} ({day_of_week})
-Tomorrow: {tomorrow_str}
-This week's dates: {json.dumps(days_ahead)}
+CONTEXT:
+- Today: {today_str} ({day_of_week})
+- Current time: {current_time}
+- Tomorrow: {tomorrow_str}
+- This week's dates: {json.dumps(days_ahead)}
 
-User input: "{user_input}"
+USER INPUT: "{user_input}"
 
-Return a JSON object with:
-- "title": Professional, clear task title (properly capitalized)
-- "description": Brief helpful description (1-2 sentences) or empty string
-- "date": YYYY-MM-DD format. Use {today_str} if not specified. Use the dates above for day names.
-- "time_slot": Time in HH:MM 24-hour format (e.g., "14:30") or null if not specified
-- "duration": Minutes (15, 30, 45, 60, 90, 120, 180). Estimate based on task type.
-- "priority": "low", "medium", or "high"
-- "category": One of: work, personal, health, errands, finance, social, learning, home, other
+YOUR TASK: Create a polished, professional task entry. Think like a high-end executive assistant who makes everything look organized and impressive.
 
-Category guide:
-- work: job tasks, meetings, projects, emails, deadlines
-- personal: self-care, hobbies, appointments
-- health: gym, doctor, exercise, medicine, wellness
-- errands: shopping, returns, pickups, deliveries, packages
-- finance: bills, banking, taxes, payments
-- social: calls, meetups, events with friends/family
-- learning: study, courses, reading, practice
-- home: cleaning, cooking, repairs, organizing
-- other: anything else
+TITLE GUIDELINES:
+- Transform casual language into professional, action-oriented titles
+- Use proper capitalization (Title Case)
+- Be concise but descriptive (3-7 words ideal)
+- Start with action verbs when appropriate
+- Examples of transformations:
+  • "call mom" → "Phone Call with Mom"
+  • "gym" → "Workout Session at Gym"
+  • "dentist at 2" → "Dental Appointment"
+  • "finish report" → "Complete & Submit Report"
+  • "buy groceries" → "Grocery Shopping Trip"
+  • "meeting with john" → "Meeting with John"
+  • "study for exam" → "Exam Preparation Study Session"
 
-Return ONLY valid JSON, no markdown or explanation:"""
+DESCRIPTION GUIDELINES:
+- Add a brief, helpful note (1-2 sentences max)
+- Include any relevant details from the input
+- Add a subtle motivational or practical tip when appropriate
+- Keep it professional but warm
+- Leave empty if the task is self-explanatory
+
+SMART DURATION ESTIMATION:
+- Quick calls/emails: 15-30 min
+- Regular meetings: 30-60 min
+- Gym/workout: 60-90 min
+- Doctor/dentist: 60 min
+- Grocery shopping: 45-60 min
+- Study sessions: 90-120 min
+- Meals/social: 60-90 min
+- Quick errands: 30 min
+
+PRIORITY LOGIC:
+- "high": urgent, important deadlines, health appointments, time-sensitive
+- "medium": regular tasks, meetings, scheduled activities
+- "low": flexible tasks, nice-to-have, leisure activities
+
+CATEGORY OPTIONS: work, personal, health, errands, finance, social, learning, home, other
+
+Return ONLY a valid JSON object with these exact keys:
+{{
+  "title": "Professional Task Title",
+  "description": "Brief helpful description or empty string",
+  "date": "YYYY-MM-DD",
+  "time_slot": "HH:MM" or null,
+  "duration": number (minutes),
+  "priority": "low" | "medium" | "high",
+  "category": "category_name"
+}}
+
+JSON ONLY - no markdown, no explanation:"""
 
     try:
         import google.generativeai as genai
@@ -193,6 +227,7 @@ def fallback_parse(user_input, reference_date=None):
     duration = 60
     priority = 'medium'
     category = 'other'
+    description = ''
     
     # Extract time (e.g., "at 3pm", "at 14:30", "10am", "7:30pm")
     # Pattern 1: "at 3:30 pm" or "at 3:30pm" or "at 15:30"
@@ -256,32 +291,103 @@ def fallback_parse(user_input, reference_date=None):
             duration = num
         title = re.sub(r'for\s+\d+\s*(hour|hr|min|minute)s?', '', title, flags=re.IGNORECASE).strip()
     
-    # Categorize based on keywords
-    category_keywords = {
-        'work': ['meeting', 'work', 'office', 'email', 'project', 'deadline', 'client', 'report'],
-        'health': ['gym', 'workout', 'exercise', 'doctor', 'medicine', 'run', 'yoga', 'dentist'],
-        'errands': ['buy', 'shop', 'return', 'pick up', 'pickup', 'drop off', 'amazon', 'store', 'grocery'],
-        'finance': ['pay', 'bill', 'bank', 'tax', 'budget', 'invoice', 'rent', 'insurance'],
-        'social': ['call', 'meet', 'lunch', 'dinner', 'party', 'friend', 'family', 'mom', 'dad'],
-        'learning': ['study', 'learn', 'read', 'course', 'class', 'practice', 'tutorial'],
-        'home': ['clean', 'cook', 'laundry', 'repair', 'organize', 'dishes', 'vacuum'],
-        'personal': ['appointment', 'haircut', 'spa', 'self-care']
+    # Categorize based on keywords and set smart defaults
+    category_config = {
+        'work': {
+            'keywords': ['meeting', 'work', 'office', 'email', 'project', 'deadline', 'client', 'report', 'presentation'],
+            'duration': 60,
+            'priority': 'medium'
+        },
+        'health': {
+            'keywords': ['gym', 'workout', 'exercise', 'doctor', 'medicine', 'run', 'yoga', 'dentist', 'therapy'],
+            'duration': 60,
+            'priority': 'high'
+        },
+        'errands': {
+            'keywords': ['buy', 'shop', 'return', 'pick up', 'pickup', 'drop off', 'amazon', 'store', 'grocery'],
+            'duration': 45,
+            'priority': 'medium'
+        },
+        'finance': {
+            'keywords': ['pay', 'bill', 'bank', 'tax', 'budget', 'invoice', 'rent', 'insurance'],
+            'duration': 30,
+            'priority': 'high'
+        },
+        'social': {
+            'keywords': ['call', 'meet', 'lunch', 'dinner', 'party', 'friend', 'family', 'mom', 'dad', 'coffee'],
+            'duration': 60,
+            'priority': 'medium'
+        },
+        'learning': {
+            'keywords': ['study', 'learn', 'read', 'course', 'class', 'practice', 'tutorial', 'exam'],
+            'duration': 90,
+            'priority': 'medium'
+        },
+        'home': {
+            'keywords': ['clean', 'cook', 'laundry', 'repair', 'organize', 'dishes', 'vacuum'],
+            'duration': 45,
+            'priority': 'low'
+        },
+        'personal': {
+            'keywords': ['appointment', 'haircut', 'spa', 'self-care', 'relax'],
+            'duration': 60,
+            'priority': 'low'
+        }
     }
     
-    for cat, keywords in category_keywords.items():
-        if any(kw in text for kw in keywords):
+    for cat, config in category_config.items():
+        if any(kw in text for kw in config['keywords']):
             category = cat
+            if not duration_match:  # Only set if user didn't specify
+                duration = config['duration']
+            priority = config['priority']
             break
     
-    # Clean up title
+    # Clean up and beautify title
     title = re.sub(r'\s+', ' ', title).strip()
     title = re.sub(r'^(at|for|on)\s+', '', title, flags=re.IGNORECASE).strip()
-    if title:
-        title = title[0].upper() + title[1:] if len(title) > 1 else title.upper()
+    
+    # Title beautification mappings
+    title_upgrades = {
+        'gym': 'Workout Session at Gym',
+        'call mom': 'Phone Call with Mom',
+        'call dad': 'Phone Call with Dad',
+        'dentist': 'Dental Appointment',
+        'doctor': 'Doctor Appointment',
+        'grocery': 'Grocery Shopping',
+        'groceries': 'Grocery Shopping',
+        'haircut': 'Haircut Appointment',
+        'lunch': 'Lunch Break',
+        'dinner': 'Dinner',
+        'breakfast': 'Breakfast',
+        'meeting': 'Meeting',
+        'study': 'Study Session',
+        'workout': 'Workout Session',
+        'yoga': 'Yoga Session',
+        'run': 'Running Session',
+        'jog': 'Jogging Session',
+        'walk': 'Walking Session',
+    }
+    
+    # Check for exact matches or simple upgrades
+    title_lower = title.lower()
+    if title_lower in title_upgrades:
+        title = title_upgrades[title_lower]
+    elif title:
+        # Convert to Title Case properly
+        words = title.split()
+        small_words = {'a', 'an', 'the', 'at', 'by', 'for', 'in', 'of', 'on', 'to', 'with', 'and', 'but', 'or'}
+        title_words = []
+        for i, word in enumerate(words):
+            if i == 0 or word.lower() not in small_words:
+                title_words.append(word.capitalize())
+            else:
+                title_words.append(word.lower())
+        title = ' '.join(title_words)
     
     return {
         'title': title or user_input.strip().title(),
-        'description': '',
+        'description': description,
         'date': task_date.strftime('%Y-%m-%d'),
         'time_slot': time_slot,
         'duration': duration,
