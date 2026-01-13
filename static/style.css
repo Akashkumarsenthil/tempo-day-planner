@@ -397,11 +397,16 @@ body {
     overflow: hidden;
 }
 
-/* ===== Timeline Scroll Wrapper (time + schedule together) ===== */
-.timeline-scroll-wrapper {
-    display: flex;
-    overflow-y: auto;
+/* ===== Timeline Area ===== */
+.timeline-area {
+    overflow: hidden;
     height: calc(100vh - 180px);
+}
+
+.timeline-scroll {
+    display: flex;
+    height: 100%;
+    overflow-y: auto;
 }
 
 /* ===== Time Column ===== */
@@ -409,7 +414,7 @@ body {
     flex-shrink: 0;
     width: 80px;
     border-right: 1px solid var(--border-color);
-    padding: 1rem 0;
+    padding-top: 1rem;
 }
 
 .time-slots {
@@ -433,6 +438,7 @@ body {
     position: relative;
     flex: 1;
     padding: 1rem 1.5rem;
+    min-height: calc(24 * 60px + 2rem);
 }
 
 .schedule-grid {
@@ -1125,7 +1131,7 @@ body {
         right: 0;
     }
     
-    .timeline-scroll-wrapper {
+    .timeline-area {
         height: auto;
         min-height: calc(100vh - 180px);
     }

@@ -72,20 +72,21 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Scrollable Timeline Area (time + schedule together) -->
-            <div class="timeline-scroll-wrapper">
-                <!-- Time Column -->
-                <aside class="time-column">
-                    <div class="time-slots" id="timeSlots"></div>
-                </aside>
-
-                <!-- Schedule Grid -->
-                <section class="schedule-container">
-                    <div class="schedule-grid" id="scheduleGrid">
-                        <!-- Tasks will be rendered here -->
+            <!-- Timeline Area (time + schedule scroll together) -->
+            <div class="timeline-area">
+                <div class="timeline-scroll">
+                    <!-- Time Column -->
+                    <div class="time-column">
+                        <div class="time-slots" id="timeSlots"></div>
                     </div>
-                    <div class="current-time-line" id="currentTimeLine"></div>
-                </section>
+                    <!-- Schedule Grid -->
+                    <div class="schedule-container">
+                        <div class="schedule-grid" id="scheduleGrid">
+                            <!-- Tasks will be rendered here -->
+                        </div>
+                        <div class="current-time-line" id="currentTimeLine"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Task Panel -->
