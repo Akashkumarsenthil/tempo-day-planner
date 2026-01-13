@@ -405,8 +405,10 @@ body {
 
 .timeline-scroll {
     display: flex;
-    height: 100%;
+    height: auto;
+    min-height: 100%;
     overflow-y: auto;
+    max-height: calc(100vh - 180px);
 }
 
 /* ===== Time Column ===== */
@@ -437,8 +439,9 @@ body {
 .schedule-container {
     position: relative;
     flex: 1;
-    padding: 1rem 1.5rem;
-    min-height: calc(24 * 60px + 2rem);
+    padding-top: 1rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
 }
 
 .schedule-grid {

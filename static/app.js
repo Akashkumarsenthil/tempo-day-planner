@@ -124,12 +124,14 @@ async function createTask(taskData) {
             // Scroll to the task time if it has a time slot
             if (newTask.time_slot) {
                 const minutes = parseTimeToMinutes(newTask.time_slot);
-                const container = document.querySelector('.schedule-container');
+                const container = document.querySelector('.timeline-scroll');
                 // Scroll to show the task with some padding above
-                container.scrollTo({
-                    top: Math.max(0, minutes - 100),
-                    behavior: 'smooth'
-                });
+                if (container) {
+                    container.scrollTo({
+                        top: Math.max(0, minutes - 100),
+                        behavior: 'smooth'
+                    });
+                }
             }
         } else {
             // Show notification that task was added to different date
@@ -384,8 +386,8 @@ function updateCurrentTimeLine() {
         elements.currentTimeLine.style.top = `${minutes}px`;
         elements.currentTimeLine.style.display = 'block';
         
-        const container = document.querySelector('.schedule-container');
-        if (container.scrollTop === 0) {
+        const container = document.querySelector('.timeline-scroll');
+        if (container && container.scrollTop === 0) {
             container.scrollTop = Math.max(0, minutes - 200);
         }
     } else {
