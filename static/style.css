@@ -392,17 +392,24 @@ body {
 /* ===== Main Content ===== */
 .main-content {
     display: grid;
-    grid-template-columns: 80px 1fr 380px;
+    grid-template-columns: 1fr 380px;
     flex: 1;
     overflow: hidden;
 }
 
-/* ===== Time Column ===== */
-.time-column {
-    border-right: 1px solid var(--border-color);
-    padding: 1rem 0;
+/* ===== Timeline Scroll Wrapper (time + schedule together) ===== */
+.timeline-scroll-wrapper {
+    display: flex;
     overflow-y: auto;
     height: calc(100vh - 180px);
+}
+
+/* ===== Time Column ===== */
+.time-column {
+    flex-shrink: 0;
+    width: 80px;
+    border-right: 1px solid var(--border-color);
+    padding: 1rem 0;
 }
 
 .time-slots {
@@ -424,8 +431,7 @@ body {
 /* ===== Schedule Container ===== */
 .schedule-container {
     position: relative;
-    overflow-y: auto;
-    height: calc(100vh - 180px);
+    flex: 1;
     padding: 1rem 1.5rem;
 }
 
@@ -1073,13 +1079,21 @@ body {
 /* ===== Responsive ===== */
 @media (max-width: 1200px) {
     .main-content {
-        grid-template-columns: 60px 1fr 320px;
+        grid-template-columns: 1fr 320px;
+    }
+    
+    .time-column {
+        width: 60px;
     }
 }
 
 @media (max-width: 1024px) {
     .main-content {
-        grid-template-columns: 60px 1fr 280px;
+        grid-template-columns: 1fr 280px;
+    }
+    
+    .time-column {
+        width: 60px;
     }
     
     .smart-input-hint {
@@ -1093,7 +1107,7 @@ body {
     }
     
     .time-column {
-        display: none;
+        width: 50px;
     }
     
     .task-panel {
@@ -1111,7 +1125,7 @@ body {
         right: 0;
     }
     
-    .schedule-container {
+    .timeline-scroll-wrapper {
         height: auto;
         min-height: calc(100vh - 180px);
     }
